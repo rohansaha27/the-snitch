@@ -1,0 +1,32 @@
+---
+description: Write every git commit message in Conventional Commits format
+alwaysApply: true
+---
+
+# Conventional Commits
+
+When drafting or creating a git commit message, follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/).
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+- Subject: lowercase type, optional scope in parentheses, colon, space, then a short imperative description.
+- Keep the subject under 72 characters.
+- Put a blank line before the body. Use the body for why, not a restatement of the diff.
+- Allowed types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`, `build`, `ci`.
+- `feat` for a new feature, `fix` for a bug fix. Mark a breaking change with `!` before the colon or a `BREAKING CHANGE:` footer.
+
+```
+feat: scaffold the iMessage overspend snitch bot
+
+Wire one Bun process so a demo can roast overspending without extra services.
+```
+
+```
+fix(poller): skip purchases already handled by the swipe page
+```
