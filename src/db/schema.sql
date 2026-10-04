@@ -86,3 +86,13 @@ CREATE TABLE IF NOT EXISTS appeals (
   ruling      TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- One Sunday report per user per week, so restarts don't double-send.
+CREATE TABLE IF NOT EXISTS weekly_reports (
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  week_start  DATE NOT NULL,
+  sent_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, week_start)
+);
+
+CREATE INDEX IF NOT EXISTS users_phone_idx ON users (phone);

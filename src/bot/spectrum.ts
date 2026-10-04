@@ -4,6 +4,7 @@ import { Spectrum, attachment, type Message, type Space } from "spectrum-ts";
 import { imessage } from "spectrum-ts/providers/imessage";
 import { terminal } from "spectrum-ts/providers/terminal";
 import { config } from "../config";
+import { handleCommand } from "./commands";
 
 type App = Awaited<ReturnType<typeof Spectrum>>;
 
@@ -23,10 +24,27 @@ async function createApp(): Promise<App> {
   return Spectrum({ providers: [terminal.config()] });
 }
 
-// Phase 1: echo. Command handling replaces this later.
+function isGroup(space: Space, message: Message): boolean {
+  if (message.platform === "imessage") return imessage(space).type === "group";
+  // Terminal: the default chat is the "DM"; any extra chat opened in the TUI acts as a group.
+  return space.id !== "terminal";
+}
+
 async function handleMessage(space: Space, message: Message): Promise<void> {
   if (message.content.type !== "text") return;
-  await space.send(message.content.text);
+  try {
+    await handleCommand({
+      spaceId: space.id,
+      senderId: message.sender?.id ?? "unknown",
+      isGroup: isGroup(space, message),
+      text: message.content.text,
+      reply: (text) => sendToSpace(space.id, text),
+      displayName: () => space.getDisplayName(),
+    });
+  } catch (err) {
+    console.error(`[bot] command failed space=${space.id}:`, (err as Error).message);
+    await sendToSpace(space.id, "🐀 Something broke on my end. Try that again in a sec.");
+  }
 }
 
 async function runLoop(current: App): Promise<void> {
