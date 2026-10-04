@@ -6,6 +6,10 @@ import { startWeeklyJob } from "./jobs/weekly";
 import { seedMerchants } from "./nessie/seed";
 import { app } from "./web/server";
 
+// Last-resort safety net for the demo: log and keep serving instead of dying.
+process.on("unhandledRejection", (err) => console.error("[boot] unhandled rejection:", err));
+process.on("uncaughtException", (err) => console.error("[boot] uncaught exception:", err));
+
 await migrate();
 await seedMerchants();
 

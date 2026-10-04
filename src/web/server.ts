@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { config } from "../config";
 import { db, dbStatus, query } from "../db";
 import { processPurchase } from "../engine/process";
-import { TZ } from "../engine/rules";
+import { localTime, TZ } from "../engine/rules";
 import { nessie } from "../nessie/client";
 import { seedMerchants } from "../nessie/seed";
 import { landingPage, wallData } from "./pages/landing";
@@ -61,11 +61,7 @@ app.get("/swipe/:token/state", async (c) => {
 function fakeLateNight(now = new Date()): Date {
   const hour = Number(now.toLocaleString("en-US", { timeZone: TZ, hour: "numeric", hourCycle: "h23" }));
   if (hour >= 23 || hour < 4) return now;
-  const date = now.toLocaleDateString("en-CA", { timeZone: TZ });
-  const offset = new Intl.DateTimeFormat("en-US", { timeZone: TZ, timeZoneName: "longOffset" })
-    .formatToParts(now).find((p) => p.type === "timeZoneName")!.value.replace("GMT", "") || "+00:00";
-  const minute = String(now.getMinutes()).padStart(2, "0");
-  return new Date(`${date}T02:${minute}:00${offset}`);
+  return localTime(now.toLocaleDateString("en-CA", { timeZone: TZ }), `02:${String(now.getMinutes()).padStart(2, "0")}`);
 }
 
 app.post("/swipe/:token", async (c) => {

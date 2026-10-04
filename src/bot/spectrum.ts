@@ -47,30 +47,43 @@ async function handleMessage(space: Space, message: Message): Promise<void> {
   }
 }
 
+let stopping = false;
+const RECONNECT_MS = 5000;
+
 async function runLoop(current: App): Promise<void> {
-  while (app === current) {
-    try {
-      for await (const [space, message] of current.messages) {
-        if (message.direction === "outbound") continue;
-        spaceCache.set(space.id, space);
-        const text = message.content.type === "text" ? JSON.stringify(message.content.text) : `<${message.content.type}>`;
-        console.log(`[photon] in space=${space.id} from=${message.sender?.id ?? "?"} ${text}`);
-        try {
-          await handleMessage(space, message);
-        } catch (err) {
-          console.error(`[photon] handler failed space=${space.id}:`, (err as Error).message);
-        }
+  try {
+    for await (const [space, message] of current.messages) {
+      if (message.direction === "outbound") continue;
+      spaceCache.set(space.id, space);
+      const text = message.content.type === "text" ? JSON.stringify(message.content.text) : `<${message.content.type}>`;
+      console.log(`[photon] in space=${space.id} from=${message.sender?.id ?? "?"} ${text}`);
+      try {
+        await handleMessage(space, message);
+      } catch (err) {
+        console.error(`[photon] handler failed space=${space.id}:`, (err as Error).message);
       }
-      console.warn("[photon] message stream ended, restarting in 5s");
-    } catch (err) {
-      console.error("[photon] message loop crashed, restarting in 5s:", (err as Error).message);
     }
-    await Bun.sleep(5000);
+    console.warn("[photon] message stream ended");
+  } catch (err) {
+    console.error("[photon] message stream crashed:", (err as Error).message);
   }
+  if (stopping || app !== current) return;
+  // Terminal: the stream ends when stdin closes; respawning the chat UI would just loop.
+  if (config.spectrumProvider === "terminal") return;
+
+  // iMessage: drop the dead connection and build a fresh one.
+  app = null;
+  spaceCache.clear();
+  await current.stop().catch(() => {});
+  console.warn(`[photon] reconnecting in ${RECONNECT_MS / 1000}s`);
+  await Bun.sleep(RECONNECT_MS);
+  await startBot();
 }
 
 // Never throws: if Photon is unreachable the rest of the app keeps running and sends become no-ops.
+// iMessage keeps retrying in the background until it connects.
 export async function startBot(): Promise<void> {
+  if (stopping) return;
   try {
     app = await createApp();
     console.log(`[photon] connected provider=${config.spectrumProvider}`);
@@ -78,11 +91,16 @@ export async function startBot(): Promise<void> {
   } catch (err) {
     console.error(`[photon] failed to start provider=${config.spectrumProvider}:`, (err as Error).message);
     app = null;
+    if (config.spectrumProvider === "imessage") {
+      console.warn(`[photon] retrying in ${(RECONNECT_MS * 3) / 1000}s`);
+      setTimeout(() => void startBot(), RECONNECT_MS * 3);
+    }
   }
 }
 
 // Releases the Photon line so the next deploy can take it (only one connection may hold it).
 export async function stopBot(): Promise<void> {
+  stopping = true;
   const current = app;
   app = null;
   if (!current) return;

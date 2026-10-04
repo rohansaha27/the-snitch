@@ -27,6 +27,10 @@ export type LastOffenses = Partial<Record<TriggerType, { at: Date; severity: Sev
 
 export const TZ = "America/Detroit";
 
+export const CATEGORY_EMOJI: Record<string, string> = {
+  food: "🍔", coffee: "☕", transport: "🚗", shopping: "📦", nightlife: "🍻", misc: "🎮",
+};
+
 // Budget thresholds as a fraction of the weekly limit -> severity.
 export const BUDGET_THRESHOLDS: [number, Severity][] = [[1, 1], [1.5, 2], [2, 3]];
 // Single purchase amount -> severity.
@@ -69,6 +73,20 @@ export function weekStart(now: Date): string {
 
 export function isThisWeek(d: Date, now: Date): boolean {
   return localParts(d).date >= weekStart(now) && d.getTime() <= now.getTime();
+}
+
+// A wall-clock time in Detroit ("2026-10-04", "02:15") as a Date, DST-aware.
+export function localTime(date: string, hm: string): Date {
+  const noon = new Date(`${date}T12:00:00Z`);
+  const offset = new Intl.DateTimeFormat("en-US", { timeZone: TZ, timeZoneName: "longOffset" })
+    .formatToParts(noon).find((p) => p.type === "timeZoneName")!.value.replace("GMT", "") || "+00:00";
+  return new Date(`${date}T${hm}:00${offset}`);
+}
+
+export function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 export function formatTime(d: Date): string {

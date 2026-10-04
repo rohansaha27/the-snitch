@@ -3,13 +3,9 @@ import { sendToSpace } from "../bot/spectrum";
 import { query } from "../db";
 import { targetSpaces } from "../engine/process";
 import { askGemini, sanitizeRoast } from "../engine/roast";
-import { isThisWeek, TZ, weekStart } from "../engine/rules";
+import { CATEGORY_EMOJI, isThisWeek, TZ, weekStart } from "../engine/rules";
 
 const usd = (n: number) => `$${n.toFixed(2)}`;
-
-export const CATEGORY_EMOJI: Record<string, string> = {
-  food: "🍔", coffee: "☕", transport: "🚗", shopping: "📦", nightlife: "🍻", misc: "🎮",
-};
 
 const CANNED = [
   "In a week defined by bold choices, none were financially sound. The Snitch will continue to monitor the situation.",
@@ -63,7 +59,7 @@ export async function buildWeeklyReport(userId: number, now = new Date()): Promi
     const h = Number(p.at.toLocaleString("en-US", { timeZone: TZ, hour: "numeric", hourCycle: "h23" }));
     return h >= 23 || h < 4;
   }).length;
-  const [topMerchant, top] = [...byMerchant.entries()].sort((a, b) => b[1].total - a[1].total)[0]!;
+  const [topMerchant, top] = [...byMerchant.entries()].sort((a, b) => b[1].n - a[1].n || b[1].total - a[1].total)[0]!;
 
   const categoryLines = [...byCategory.entries()]
     .sort((a, b) => b[1] - a[1])

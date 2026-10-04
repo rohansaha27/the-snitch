@@ -19,6 +19,7 @@
     "start": "bun run src/index.ts",
     "dev": "bun --watch src/index.ts",
     "seed": "bun run src/nessie/seed.ts",
-    "simulate": "bun run scripts/simulate.ts"
+    "simulate": "bun run scripts/simulate.ts",
+    "demo-seed": "bun run scripts/demo-seed.ts"
   }
 }

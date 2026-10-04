@@ -3,8 +3,8 @@ import { config } from "../config";
 import { query } from "../db";
 import { targetSpaces } from "../engine/process";
 import { askGemini, factLine, sanitizeRoast } from "../engine/roast";
-import type { Offense } from "../engine/rules";
-import { buildWeeklyReport, CATEGORY_EMOJI } from "../jobs/weekly";
+import { CATEGORY_EMOJI, type Offense } from "../engine/rules";
+import { buildWeeklyReport } from "../jobs/weekly";
 import { nessie } from "../nessie/client";
 import { sendToSpace } from "./spectrum";
 

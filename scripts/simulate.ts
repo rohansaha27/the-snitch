@@ -3,47 +3,26 @@
 // Usage: bun run simulate
 import { config } from "../src/config";
 import { buildSnitch } from "../src/engine/roast";
+import { MERCHANTS } from "../src/nessie/seed";
+import { DEMO_BUDGETS, TERRIBLE_WEEK } from "./terrible-week";
 import {
+  addDays,
   applyCooldowns,
   detectOffenses,
   formatTime,
+  localTime,
   type BudgetInput,
   type LastOffenses,
   type Offense,
   type PurchaseInput,
 } from "../src/engine/rules";
 
-const budgets: BudgetInput[] = [
-  { category: "food", weeklyLimit: 60 },
-  { category: "coffee", weeklyLimit: 20 },
-  { category: "nightlife", weeklyLimit: 50 },
-  { category: "shopping", weeklyLimit: 100 },
-  { category: "transport", weeklyLimit: 40 },
-];
+const budgets: BudgetInput[] = Object.entries(DEMO_BUDGETS).map(([category, weeklyLimit]) => ({ category, weeklyLimit }));
 
-const CATEGORY: Record<string, string> = {
-  Chipotle: "food", DoorDash: "food", "Taco Bell": "food", Starbucks: "coffee",
-  Uber: "transport", Amazon: "shopping", "Rick's American Cafe": "nightlife", Steam: "misc",
-};
+const CATEGORY = Object.fromEntries(MERCHANTS.map((m) => [m.name, m.category])) as Record<string, string>;
 
-// Week of Mon 2026-09-28, Detroit time (EDT, UTC-4).
-const week: [string, string, number][] = [
-  ["2026-09-28T08:10", "Starbucks", 7.65],
-  ["2026-09-28T12:30", "Chipotle", 14.85],
-  ["2026-09-28T23:40", "DoorDash", 31.2],
-  ["2026-09-29T08:05", "Starbucks", 7.65],
-  ["2026-09-29T13:00", "Taco Bell", 11.49],
-  ["2026-09-29T19:30", "DoorDash", 26.8],
-  ["2026-09-30T08:00", "Starbucks", 7.65],
-  ["2026-09-30T15:20", "Amazon", 89.99],
-  ["2026-10-01T00:45", "DoorDash", 47.12],
-  ["2026-10-01T08:10", "Starbucks", 7.65],
-  ["2026-10-02T22:15", "Rick's American Cafe", 38],
-  ["2026-10-03T01:30", "Rick's American Cafe", 44],
-  ["2026-10-03T02:10", "Uber", 23.4],
-  ["2026-10-03T14:00", "Amazon", 164.5],
-  ["2026-10-04T03:20", "DoorDash", 52.3],
-];
+// Week of Mon 2026-09-28, Detroit time.
+const MONDAY = "2026-09-28";
 
 const usd = (n: number) => `$${n.toFixed(2)}`;
 
@@ -69,14 +48,14 @@ let suppressed = 0;
 
 console.log(`Simulating a terrible week. cooldown=${config.cooldownMs / 1000}s llm=${config.llmMode}\n`);
 
-for (const [local, merchantName, amount] of week) {
-  const detectedAt = new Date(`${local}:00-04:00`);
+for (const [day, hm, merchantName, amount] of TERRIBLE_WEEK) {
+  const detectedAt = localTime(addDays(MONDAY, day), hm);
   const purchase: PurchaseInput = { merchantName, category: CATEGORY[merchantName] ?? "misc", amount, detectedAt };
   const all = detectOffenses(purchase, history, budgets, detectedAt);
   const fired = applyCooldowns(all, last, detectedAt, config.cooldownMs);
 
-  const day = detectedAt.toLocaleDateString("en-US", { timeZone: "America/Detroit", weekday: "short" });
-  console.log(`${day} ${formatTime(detectedAt).padStart(8)}  ${merchantName.padEnd(22)} ${usd(amount).padStart(8)}`);
+  const weekday = detectedAt.toLocaleDateString("en-US", { timeZone: "America/Detroit", weekday: "short" });
+  console.log(`${weekday} ${formatTime(detectedAt).padStart(8)}  ${merchantName.padEnd(22)} ${usd(amount).padStart(8)}`);
   if (all.length === 0) console.log("    clean");
   for (const o of all) {
     const ok = fired.includes(o);

@@ -1,8 +1,7 @@
 // Personal swipe panel: tap a merchant to "spend", watch the budget bars fill, read your roasts.
 // The page renders from one JSON state blob (inline on load, then refreshed after taps and every few seconds).
 import { query } from "../../db";
-import { isThisWeek } from "../../engine/rules";
-import { CATEGORY_EMOJI } from "../../jobs/weekly";
+import { CATEGORY_EMOJI, isThisWeek } from "../../engine/rules";
 import { esc, layout, masthead } from "./layout";
 
 export type SwipeUser = { id: number; name: string; swipe_token: string; nessie_account_id: string | null };
