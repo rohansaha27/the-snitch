@@ -11,6 +11,18 @@ CREATE TABLE IF NOT EXISTS users (
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Merchants seeded into Nessie (`bun run seed`). source = which NESSIE_MODE created the id.
+CREATE TABLE IF NOT EXISTS merchants (
+  id                  SERIAL PRIMARY KEY,
+  name                TEXT NOT NULL UNIQUE,
+  category            TEXT NOT NULL,
+  emoji               TEXT,
+  default_amount      NUMERIC(10, 2) NOT NULL,
+  nessie_merchant_id  TEXT NOT NULL,
+  source              TEXT NOT NULL,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- A group chat linked to the user it snitches on (`watch <name>`).
 CREATE TABLE IF NOT EXISTS groups (
   id          SERIAL PRIMARY KEY,

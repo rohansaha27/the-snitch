@@ -1,9 +1,11 @@
 import { startBot } from "./bot/spectrum";
 import { config } from "./config";
 import { migrate } from "./db";
+import { seedMerchants } from "./nessie/seed";
 import { app } from "./web/server";
 
 await migrate();
+await seedMerchants();
 
 Bun.serve({ port: config.port, fetch: app.fetch });
 
