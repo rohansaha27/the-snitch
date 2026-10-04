@@ -81,6 +81,19 @@ export async function startBot(): Promise<void> {
   }
 }
 
+// Releases the Photon line so the next deploy can take it (only one connection may hold it).
+export async function stopBot(): Promise<void> {
+  const current = app;
+  app = null;
+  if (!current) return;
+  try {
+    await current.stop();
+    console.log("[photon] disconnected");
+  } catch (err) {
+    console.error("[photon] stop failed:", (err as Error).message);
+  }
+}
+
 async function resolveSpace(spaceId: string): Promise<Space | null> {
   const cached = spaceCache.get(spaceId);
   if (cached) return cached;

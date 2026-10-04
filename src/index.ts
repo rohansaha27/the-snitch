@@ -1,6 +1,6 @@
-import { startBot } from "./bot/spectrum";
+import { startBot, stopBot } from "./bot/spectrum";
 import { config } from "./config";
-import { migrate } from "./db";
+import { db, migrate } from "./db";
 import { startPoller } from "./jobs/poller";
 import { startWeeklyJob } from "./jobs/weekly";
 import { seedMerchants } from "./nessie/seed";
@@ -19,3 +19,12 @@ console.log(
 await startBot();
 startPoller();
 startWeeklyJob();
+
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.once(signal, async () => {
+    console.log(`[boot] ${signal}, shutting down`);
+    await stopBot();
+    await db?.end().catch(() => {});
+    process.exit(0);
+  });
+}

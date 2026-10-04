@@ -49,6 +49,7 @@ LLM_MODE=mock|live
 POLL_INTERVAL_MS=5000          # set to 3000 for demo
 DEMO_ADMIN_SECRET=...          # protects /admin/reset
 PUBLIC_URL=https://...         # used in links the bot sends
+BOT_PHONE=+1...                # the line people text, shown on the landing page
 ```
 
 All other secrets in `.env` (never commit). Keep `.env.example` updated whenever a new var is added.
