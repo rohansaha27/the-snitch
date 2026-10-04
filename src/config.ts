@@ -41,15 +41,16 @@ function requireSecrets<T extends string>(mode: T, live: T, mock: T, label: stri
 
 const port = int("PORT", 3000);
 
-const photonProjectId = str("PHOTON_PROJECT_ID");
-const photonProjectSecret = str("PHOTON_PROJECT_SECRET");
+// SPECTRUM_* is what the Photon docs use; PHOTON_* kept as an alias.
+const photonProjectId = str("SPECTRUM_PROJECT_ID") ?? str("PHOTON_PROJECT_ID");
+const photonProjectSecret = str("SPECTRUM_PROJECT_SECRET") ?? str("PHOTON_PROJECT_SECRET");
 const nessieApiKey = str("NESSIE_API_KEY");
 const geminiApiKey = str("GEMINI_API_KEY");
 
 const spectrumProvider = requireSecrets(
   oneOf("SPECTRUM_PROVIDER", ["terminal", "imessage"] as const, "terminal"),
   "imessage", "terminal", "SPECTRUM_PROVIDER",
-  { PHOTON_PROJECT_ID: photonProjectId, PHOTON_PROJECT_SECRET: photonProjectSecret },
+  { SPECTRUM_PROJECT_ID: photonProjectId, SPECTRUM_PROJECT_SECRET: photonProjectSecret },
 );
 const nessieMode = requireSecrets(
   oneOf("NESSIE_MODE", ["mock", "live"] as const, "mock"),
@@ -78,7 +79,8 @@ export const config = Object.freeze({
 
   nessieMode,
   nessieApiKey,
-  nessieBaseUrl: str("NESSIE_BASE_URL") ?? "http://api.nessieisreal.com",
+  // Plain http:// to Nessie times out on some networks; https works.
+  nessieBaseUrl: (str("NESSIE_BASE_URL") ?? "https://api.nessieisreal.com").replace(/\/$/, ""),
 
   llmMode,
   geminiApiKey,

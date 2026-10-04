@@ -13,7 +13,7 @@ A hackathon prototype (MHacks 2026, solo, 24h). An iMessage bot that watches you
 
 - Runtime: Bun + TypeScript
 - iMessage: `spectrum-ts` (Photon) with the cloud iMessage provider; `terminal` provider for local dev
-- Bank data: Capital One Nessie API (`http://api.nessieisreal.com`, `?key=` on every request)
+- Bank data: Capital One Nessie API (`https://api.nessieisreal.com`, `?key=` on every request; plain http times out)
 - LLM: Gemini via `@google/genai`, model name from `GEMINI_MODEL` env
 - DB: Postgres on Neon via `@neondatabase/serverless` (raw SQL, schema in `src/db/schema.sql`)
 - Web: Hono, server-rendered HTML strings, vanilla JS with polling (no React, no build step)
