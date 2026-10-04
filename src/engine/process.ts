@@ -13,6 +13,7 @@ export interface IncomingPurchase {
   amount: number;
   description: string;
   purchaseDate: string; // YYYY-MM-DD from Nessie
+  // Defaults to now. The swipe page's 2am toggle backdates it; only the late-night rule reads it.
   detectedAt?: Date;
 }
 
@@ -65,7 +66,8 @@ async function run(p: IncomingPurchase): Promise<ProcessResult> {
   );
   if (!claimed.length) return { status: "duplicate", offenses: [] };
 
-  const detectedAt = p.detectedAt ?? new Date();
+  const now = new Date();
+  const detectedAt = p.detectedAt ?? now;
   const [merchant] = await query<{ name: string; category: string }>(
     "SELECT name, category FROM merchants WHERE nessie_merchant_id = $1",
     [p.merchantId],
@@ -88,8 +90,8 @@ async function run(p: IncomingPurchase): Promise<ProcessResult> {
   const history = (
     await query<{ merchant_name: string; category: string; amount: string; detected_at: Date }>(
       `SELECT merchant_name, category, amount, detected_at FROM purchases
-       WHERE user_id = $1 AND id <> $2 AND detected_at > now() - interval '8 days' AND detected_at <= $3`,
-      [p.userId, row.id, detectedAt],
+       WHERE user_id = $1 AND id <> $2 AND detected_at > now() - interval '8 days'`,
+      [p.userId, row.id],
     )
   ).map((h): PurchaseInput => ({
     merchantName: h.merchant_name,
@@ -102,8 +104,8 @@ async function run(p: IncomingPurchase): Promise<ProcessResult> {
   ).map((b) => ({ category: b.category, weeklyLimit: Number(b.weekly_limit) }));
 
   const purchase: PurchaseInput = { merchantName, category, amount: p.amount, detectedAt };
-  const all = detectOffenses(purchase, history, budgets, detectedAt);
-  const offenses = applyCooldowns(all, await loadLastOffenses(p.userId), detectedAt, config.cooldownMs);
+  const all = detectOffenses(purchase, history, budgets, now);
+  const offenses = applyCooldowns(all, await loadLastOffenses(p.userId), now, config.cooldownMs);
   console.log(
     `[engine] user=${p.userId} ${merchantName} $${p.amount.toFixed(2)} -> ${offenses.map((o) => `${o.type}:${o.severity}`).join(",") || "clean"}${all.length > offenses.length ? ` (${all.length - offenses.length} on cooldown)` : ""}`,
   );
@@ -119,7 +121,7 @@ async function run(p: IncomingPurchase): Promise<ProcessResult> {
     await query(
       `INSERT INTO offenses (user_id, purchase_id, trigger_type, severity, facts, roast, space_id, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [p.userId, row.id, o.type, o.severity, JSON.stringify(o.facts), i === 0 ? snitch.text : null, spaceIds[0] ?? null, detectedAt],
+      [p.userId, row.id, o.type, o.severity, JSON.stringify(o.facts), i === 0 ? snitch.text : null, spaceIds[0] ?? null, now],
     );
   }
   return { status: "snitched", offenses, snitch, spaceIds };

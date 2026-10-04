@@ -74,6 +74,8 @@ export const config = Object.freeze({
   databaseUrl: str("DATABASE_URL"),
 
   spectrumProvider,
+  // The iMessage line people text, shown on the landing page (e.g. +15551234567).
+  botPhone: str("BOT_PHONE"),
   photonProjectId,
   photonProjectSecret,
 
