@@ -2,6 +2,7 @@
 // No iMessage, no db, no Nessie: everything is in memory, so iterate on thresholds here.
 // Usage: bun run simulate
 import { config } from "../src/config";
+import { buildSnitch } from "../src/engine/roast";
 import {
   applyCooldowns,
   detectOffenses,
@@ -66,7 +67,7 @@ const last: LastOffenses = {};
 let snitched = 0;
 let suppressed = 0;
 
-console.log(`Simulating a terrible week. cooldown=${config.cooldownMs / 1000}s\n`);
+console.log(`Simulating a terrible week. cooldown=${config.cooldownMs / 1000}s llm=${config.llmMode}\n`);
 
 for (const [local, merchantName, amount] of week) {
   const detectedAt = new Date(`${local}:00-04:00`);
@@ -86,6 +87,11 @@ for (const [local, merchantName, amount] of week) {
     } else {
       suppressed++;
     }
+  }
+  // One message per purchase, exactly as the group chat would see it.
+  if (fired.length) {
+    const { text } = await buildSnitch("Rick", fired);
+    console.log(`\n${text.replace(/^/gm, "      │ ")}\n`);
   }
   history.push(purchase);
 }
