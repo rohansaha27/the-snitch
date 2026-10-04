@@ -88,6 +88,8 @@ export const config = Object.freeze({
 
   pollIntervalMs: int("POLL_INTERVAL_MS", 5000),
   demoMode: bool("DEMO_MODE"),
+  // Max one snitch per (user, trigger type) per window. DEMO_MODE shortens it for live demos.
+  cooldownMs: bool("DEMO_MODE") ? 30_000 : 60 * 60_000,
   demoAdminSecret,
 });
 
